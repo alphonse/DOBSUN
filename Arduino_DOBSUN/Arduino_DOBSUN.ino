@@ -23,10 +23,11 @@
   String inCharStr;
   boolean err = false;
   String noAvgStr;
-  int noAvg;
+  int noAvg = 32;
   float aVolt;
   float totalVolt;
-  String dataStr = "";
+  String dataStr = " ";
+  boolean stream = true;
   
   // function for writing long values to EEPROM
   // Kevin Elsenberger, arduino.cc
@@ -67,6 +68,9 @@
   
   void setup() {
     Serial.begin(9600);
+    pinMode(2, INPUT_PULLUP); // for "measurement" switch
+    pinMode(13, OUTPUT); // use onboard LED as indicator
+    digitalWrite(13, LOW);
   }
 
   // ------------------------------------------------------------------------------------------------------------
@@ -93,9 +97,9 @@
     }
     
     // identify self when asked (or be elusive) -------------------------------------
-    if (inCharStr == "*IDN?\n") {
+    if (inCharStr.startsWith("*IDN?")) {
       Serial.println("I'm a Dobson meter and sun photometer!");
-      Serial.println("v1.0, (c.c.) Al Fischer 2014");
+      Serial.println("v0.1, (c.c.) Al Fischer 2014");
     }
     
     // set integration time (for N ms) ----------------------------------------------
@@ -128,16 +132,20 @@
       }
       err == false;
   }
-  if (inCharStr.startsWith("intTime?")) {
+  
+  else if (inCharStr.startsWith("intTime?")) {
       intTime.trim();
       dataStr = intTime + " ms";
   }
   
   // take reading (for N averages and write to EEPROM) ----------------------------
-  else if (inCharStr.startsWith("getMeas")) {
-    noAvgStr = inCharStr.substring(8, 10);
-    noAvgStr.trim();
-    noAvg = noAvgStr.toInt();
+  else if (inCharStr.startsWith("getMeas") || digitalRead(2) == LOW) {
+    digitalWrite(13, HIGH);
+    if (inCharStr.startsWith("getMeas")) {
+      noAvgStr = inCharStr.substring(8, 10);
+      noAvgStr.trim();
+      noAvg = noAvgStr.toInt();
+    }
     unsigned long rd = 0;
     unsigned long gr = 0;
     unsigned long bl = 0;
@@ -173,11 +181,10 @@
          EEPROM.write(0, addr);
          if (echo = true) {
             Serial.print("Data saved at "); Serial.print(addr - 24); Serial.print(" through "); Serial.println(addr - 1);
-        }
+          }
     }
     }
     i = 0;
-
   }
   
   // read data from EEPROM ----------------------------------------------
@@ -221,21 +228,37 @@
     }
     else {echo = false;}
   }
+
+  // real-time/continuous data stream ---------------------------------------
+  else if (inCharStr.startsWith("stream")) {
+    inCharStr.trim();
+    if (inCharStr.startsWith("stream.1")) {
+      stream = true;
+    }
+    else if (inCharStr.startsWith("stream.0")) {
+      stream = false;
+    }
+    if (echo == true) {
+      Serial.println(inCharStr + " OK");
+    }
+  }
   
   // print answers to serial port if there's been a request ----------------
   if (dataStr != " ") {
       Serial.println(dataStr);
        dataStr = " ";
   }
-  
-  // real-time/continuous data stream ---------------------------------------
-  Serial.print(c); Serial.print(", "); Serial.print(r); Serial.print(", "); Serial.print(g); Serial.print(", "); Serial.print(b); Serial.print(", ");
-  Serial.print(aVolt); Serial.print(", ");
-  Serial.print(totalVolt); Serial.print('\n');
+ 
+ // real-time/continuous data stream ---------------------------------------
+ if (stream == true) {
+    Serial.print(c); Serial.print(", "); Serial.print(r); Serial.print(", "); Serial.print(g); Serial.print(", "); Serial.print(b); Serial.print(", ");
+    Serial.print(aVolt); Serial.print(", ");
+    Serial.print(totalVolt); Serial.print('\n');
+  }
   
   // reset values for next go 'round ----------------------------------------
   i = 0;
-  inCharStr = "";
+  inCharStr = " ";
   memset(inChar, 0, sizeof(inChar));
   
   delay(500);
