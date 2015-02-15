@@ -1,0 +1,10 @@
+Package: DOBSUN
+Type: Package
+Title: An R package for processing data from DOBSUN, a combined Dobsonmeter-sun photometer
+Version: 0.1
+Date: 2015-02-14
+Author: Al Fischer
+Maintainer: Al Fischer <alphonse.fisch@gmail.com>
+Depends: RAtmosphere, magicaxis
+Description: Utilities for calculating column ozone concentration from Dobson meter data and column aerosol optical thickness from sun photometer data.
+License: GPL-3
