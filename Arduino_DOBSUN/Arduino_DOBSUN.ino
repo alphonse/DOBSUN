@@ -199,7 +199,7 @@
          dataStr = dataStr + String(EEPROMReadlong(i)) + '\n';
        }
        else{dataStr = dataStr + String(EEPROMReadlong(i)) + ", ";}
-       n = n++;
+       n = ++n;
      }
      Serial.print('\n');
   }
